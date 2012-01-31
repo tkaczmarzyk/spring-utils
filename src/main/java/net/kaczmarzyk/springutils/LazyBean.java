@@ -20,52 +20,94 @@
 package net.kaczmarzyk.springutils;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.FactoryBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-public abstract class LazyBean implements ApplicationContextAware {
+public class LazyBean implements ApplicationContextAware, FactoryBean<Object> {
 
 	private ApplicationContext appCtx;
 	private String beanName;
-	private Object bean;
+	private Class<?> beanType;
+	private Object wrappedBean;
+	private Object wrapper;
 	
+	
+	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) {
 		appCtx = applicationContext;
 	}
 	
-	public Object getBean() {
+	private Object getBean() {
 		assertContext();
-		if (bean == null) {
-			bean = appCtx.getBean(beanName);
+		if (wrappedBean == null) {
+			if (beanName != null) {
+				wrappedBean = appCtx.getBean(beanName, beanType);
+			} else {
+				Map<String, ?> beans = new HashMap<String, Object>(appCtx.getBeansOfType(beanType));
+				String wrapperName = null;
+				for (Map.Entry<String, ?> entry : beans.entrySet()) {
+					if (entry.getValue() instanceof Lazy) {
+						wrapperName = entry.getKey();
+						break;
+					}
+				}
+				beans.remove(wrapperName);
+				if (beans.size() != 1) {
+					throw new IllegalStateException("No unique bean of type " + beanType + ". Found: " + beans.keySet());
+				} else {
+					wrappedBean = beans.values().iterator().next();
+				}
+			}
 		}
-		return bean;
+		return wrappedBean;
 	}
 	
-	public Class<?> getBeanType() {
-		assertContext();
-		return appCtx.getType(beanName);
+	public void setBeanName(String beanName) {
+		this.beanName = beanName;
 	}
-
+	
+	public void setBeanType(Class<?> beanType) {
+		this.beanType = beanType;
+	}
+	
 	private void assertContext() {
 		if (appCtx == null) {
 			throw new IllegalStateException("application context not set");
 		}
 	}
 	
-	public static LazyBean createProxy(String beanName) {
+	@Override
+	public Class<?> getObjectType() {
+		return beanType;
+	}
+
+	@Override
+	public boolean isSingleton() {
+		return true; // TODO make it configurable
+	}
+	
+	@Override
+	public Object getObject() throws BeansException {
 		ProxyFactory factory = new ProxyFactory();
-		factory.setSuperclass(LazyBean.class);
+		factory.setInterfaces(new Class<?>[] { beanType, Lazy.class }); // TODO support base classes, multiple interfaces
 		
 		MethodHandler handler = new MethodHandler() {
 			@Override
-			public Object invoke(Object selfObj, Method thisMethod, Method proceed, Object[] args) throws Exception {
-				LazyBean self = (LazyBean) selfObj;
-				if (thisMethod.getDeclaringClass().isAssignableFrom(self.getBeanType())) {
-					return thisMethod.invoke(self.getBean(), args);
+			public Object invoke(Object self, Method thisMethod, Method proceed, Object[] args) throws Exception {
+				if (Arrays.asList("toString", "equals", "hashCode").contains(thisMethod.getName())) {
+					return proceed.invoke(self, args);
+				}
+				if (thisMethod.getDeclaringClass().isAssignableFrom(beanType)) {
+					return thisMethod.invoke(getBean(), args);
 				} else {
 					return proceed.invoke(self, args);
 				}
@@ -73,13 +115,15 @@ public abstract class LazyBean implements ApplicationContextAware {
 		};
 		
 		try {
-			LazyBean lazyBean = (LazyBean) factory.create(new Class<?>[0], new Object[0], handler);
-			lazyBean.beanName = beanName;
-			return lazyBean;
+			wrapper = factory.create(new Class<?>[0], new Object[0], handler);
+			return wrapper;
 		} catch (RuntimeException re) {
 			throw re;
 		} catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
+	}
+	
+	public static interface Lazy {
 	}
 }
