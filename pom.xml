@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>net.kaczmarzyk</groupId>
+    <artifactId>spring-utils</artifactId>
+    <packaging>jar</packaging>
+    <version>0.0.1-SNAPSHOT</version>
+
+    <name>spring-utils</name>
+    <description>A set of utilities for Spring Framework</description>
+    <inceptionYear>2013</inceptionYear>
+    <licenses>
+        <license>
+            <name>LGPL</name>
+            <url>http://www.gnu.org/licenses/lgpl-3.0-standalone.html</url>
+        </license>
+    </licenses>
+    <url>https://github.com/tkaczmarzyk/spring-utils</url>
+    <developers>
+        <developer>
+            <name>Tomasz Kaczmarzyk</name>
+            <email>springutils@kaczmarzyk.net</email>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <organization>kaczmarzyk.net</organization>
+        </developer>
+    </developers>
+
+    <properties>
+        <wagon-ftp.version>2.2</wagon-ftp.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <scm>
+        <connection>scm:git:git@github.com:tkaczmarzyk/spring-utils.git</connection>
+        <url>scm:git:git@github.com:tkaczmarzyk/spring-utils.git</url>
+        <developerConnection>scm:git:git@github.com:tkaczmarzyk/spring-utils.git</developerConnection>
+    </scm>
+
+	<build>
+		<plugins>
+			<plugin>
+                <groupId>com.mycila.maven-license-plugin</groupId>
+                <artifactId>maven-license-plugin</artifactId>
+                <version>1.10.b1</version>
+                <configuration>
+                    <header>src/etc/license_header.txt</header>
+                    <quiet>false</quiet>
+                    <failIfMissing>true</failIfMissing>
+                    <aggregate>false</aggregate>
+                    <includes>
+                        <include>src/main/scala/**</include>
+                        <include>src/test/scala/**</include>
+                    </includes>
+                    <excludes>
+                        <exclude>src/site</exclude>
+                    </excludes>
+                    <useDefaultExcludes>true</useDefaultExcludes>
+                    <useDefaultMapping>true</useDefaultMapping>
+                    <properties>
+                        <year>${project.inceptionYear}</year>
+                    </properties>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+		</plugins>
+
+		<extensions>
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-ftp</artifactId>
+                <version>${wagon-ftp.version}</version>
+            </extension>
+        </extensions>
+	</build>
+
+	<dependencies>
+		<dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.10</version>
+            <scope>test</scope>
+        </dependency>
+	</dependencies>
+
+	<distributionManagement>
+        <repository>
+            <id>repo.kaczmarzyk.net</id>
+            <url>ftp://web3.rootnode.net:55990</url>
+        </repository>
+    </distributionManagement>
+</project>
