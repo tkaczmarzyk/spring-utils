@@ -62,8 +62,8 @@
                     <failIfMissing>true</failIfMissing>
                     <aggregate>false</aggregate>
                     <includes>
-                        <include>src/main/scala/**</include>
-                        <include>src/test/scala/**</include>
+                        <include>src/main/java/**</include>
+                        <include>src/test/java/**</include>
                     </includes>
                     <excludes>
                         <exclude>src/site</exclude>
