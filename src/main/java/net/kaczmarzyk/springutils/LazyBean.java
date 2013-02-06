@@ -19,6 +19,7 @@
  */
 package net.kaczmarzyk.springutils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -102,12 +103,16 @@ public class LazyBean implements ApplicationContextAware, FactoryBean<Object> {
 		
 		MethodHandler handler = new MethodHandler() {
 			@Override
-			public Object invoke(Object self, Method thisMethod, Method proceed, Object[] args) throws Exception {
+			public Object invoke(Object self, Method thisMethod, Method proceed, Object[] args) throws Throwable {
 				if (Arrays.asList("toString", "equals", "hashCode").contains(thisMethod.getName())) {
 					return proceed.invoke(self, args);
 				}
 				if (thisMethod.getDeclaringClass().isAssignableFrom(beanType)) {
-					return thisMethod.invoke(getBean(), args);
+					try {
+						return thisMethod.invoke(getBean(), args);
+					} catch (InvocationTargetException e) {
+						throw e.getTargetException();
+					}
 				} else {
 					return proceed.invoke(self, args);
 				}
